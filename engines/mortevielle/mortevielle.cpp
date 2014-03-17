@@ -37,6 +37,9 @@
 #include "common/system.h"
 #include "common/config-manager.h"
 #include "common/debug-channels.h"
+#ifdef USE_TTS
+#include "common/text-to-speech.h"
+#endif
 #include "engines/util.h"
 #include "engines/engine.h"
 #include "graphics/palette.h"
@@ -289,6 +292,11 @@ Common::ErrorCode MortevielleEngine::initialize() {
 
 	_soundManager->loadNoise();
 	_soundManager->loadAmbiantSounds();
+	
+#ifdef USE_TTS
+	if (g_system->getTextToSpeechManager() != 0)
+		g_system->getTextToSpeechManager()->initSpeech(Common::EN_ANY);
+#endif
 
 	return Common::kNoError;
 }

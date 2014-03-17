@@ -31,6 +31,9 @@
 #include "mortevielle/menu.h"
 #include "mortevielle/mouse.h"
 #include "mortevielle/outtext.h"
+#ifdef USE_TTS
+#include "common/text-to-speech.h"
+#endif
 
 #include "common/scummsys.h"
 #include "graphics/cursorman.h"
@@ -1876,6 +1879,10 @@ Common::String MortevielleEngine::getString(int num) {
 		// Remove trailing '$'s
 		wrkStr.deleteLastChar();
 
+#ifdef USE_TTS
+	if (g_system->getTextToSpeechManager() != 0)
+		g_system->getTextToSpeechManager()->startSpeech(wrkStr);
+#endif
 	return wrkStr;
 }
 
