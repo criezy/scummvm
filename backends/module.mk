@@ -98,7 +98,8 @@ MODULE_OBJS += \
 	midi/coreaudio.o \
 	midi/coremidi.o \
 	updates/macosx/macosx-updates.o \
-	taskbar/macosx/macosx-taskbar.o
+	taskbar/macosx/macosx-taskbar.o \
+	text-to-speech/macosx/macosx-text-to-speech.o
 endif
 
 ifdef WIN32

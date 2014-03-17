@@ -129,6 +129,8 @@ _freetype2=auto
 _taskbar=auto
 _updates=no
 _libunity=auto
+_tts=auto
+_osx_tts=no
 # Default option behavior yes/no
 _debug_build=auto
 _release_build=auto
@@ -1044,6 +1046,8 @@ for ac_option in $@; do
 	--disable-updates)        _updates=no     ;;
 	--enable-libunity)        _libunity=yes   ;;
 	--disable-libunity)       _libunity=no    ;;
+	--enable-tts)             _tts=yes        ;;
+	--disable-tts)            _tts=no         ;;
 	--enable-opengl)          _opengl=yes     ;;
 	--disable-opengl)         _opengl=no      ;;
 	--enable-bink)            _bink=yes       ;;
@@ -4081,6 +4085,34 @@ if test "$_updates" = yes; then
 else
 	echo "$_updates"
 fi
+
+#
+# Check whether to build TTS integration support
+#
+echo_n "Building text-to-speech integration support... "
+if test "$_tts" = "no"; then
+	echo "no"
+else
+	case $_host_os in
+	darwin*)
+		echo "osx"
+		_tts=yes
+		_osx_tts=yes
+		;;
+	*)
+#		if test "$_some_tts_lib" = yes; then
+#			echo "some_tts_lib"
+#			_tts=yes
+#		else
+#			echo "no"
+#			_tts=no
+#		fi
+		;;
+	esac
+fi
+define_in_config_if_yes $_tts 'USE_TTS'
+define_in_config_if_yes $_osx_tts 'USE_OSX_TTS'
+
 
 #
 # Figure out installation directories
