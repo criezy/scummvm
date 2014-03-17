@@ -29,6 +29,7 @@
 #include "common/str.h"
 #include "common/taskbar.h"
 #include "common/updates.h"
+#include "common/text-to-speech.h"
 #include "common/textconsole.h"
 #ifdef ENABLE_EVENTRECORDER
 #include "gui/EventRecorder.h"
@@ -51,6 +52,9 @@ OSystem::OSystem() {
 #if defined(USE_UPDATES)
 	_updateManager = 0;
 #endif
+#if defined(USE_TTS)
+	_textToSpeechManager = 0;
+#endif
 	_fsFactory = 0;
 }
 
@@ -72,6 +76,11 @@ OSystem::~OSystem() {
 #if defined(USE_UPDATES)
 	delete _updateManager;
 	_updateManager = 0;
+#endif
+
+#if defined(USE_TTS)
+	delete _textToSpeechManager;
+	_textToSpeechManager = 0;
 #endif
 
 	delete _savefileManager;

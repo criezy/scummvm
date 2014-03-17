@@ -56,6 +56,9 @@ class HardwareInputSet;
 class Keymap;
 class KeymapperDefaultBindings;
 #endif
+#if defined(USE_TTS)
+class TextToSpeechManager;
+#endif
 }
 
 class AudioCDManager;
@@ -176,6 +179,15 @@ protected:
 	 * @note _updateManager is deleted by the OSystem destructor.
 	 */
 	Common::UpdateManager *_updateManager;
+#endif
+
+#if defined(USE_TTS)
+	/**
+	 * No default value is provided for _textToSpeechManager by OSystem.
+	 *
+	 * @note _textToSpeechManager is deleted by the OSystem destructor.
+	 */
+	Common::TextToSpeechManager *_textToSpeechManager;
 #endif
 
 	/**
@@ -1116,6 +1128,17 @@ public:
 	}
 #endif
 
+#if defined(USE_TTS)
+	/**
+	 * Returns the TextToSpeechManager, used to handle text to speech features.
+	 *
+	 * @return the TextToSpeechManager for the current architecture
+	 */
+	virtual Common::TextToSpeechManager *getTextToSpeechManager() {
+		return _textToSpeechManager;
+	}
+#endif
+	
 	/**
 	 * Returns the FilesystemFactory object, depending on the current architecture.
 	 *
