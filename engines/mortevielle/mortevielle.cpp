@@ -295,7 +295,7 @@ Common::ErrorCode MortevielleEngine::initialize() {
 	
 #ifdef USE_TTS
 	if (g_system->getTextToSpeechManager() != 0)
-		g_system->getTextToSpeechManager()->initSpeech(Common::EN_ANY);
+		g_system->getTextToSpeechManager()->initSpeech(getLanguage());
 #endif
 
 	return Common::kNoError;
