@@ -39,7 +39,6 @@ class TextToSpeechManager {
 public:
 	// This is a simple interface for TTS capabilities, probably too simple.
 	// Here are some questions we should look at:
-	// - Encoding of the string passed to initSpeech()
 	// - The TTS engine can have additional settings, such as the tempo (e.g. "Speaking Rate" on OS X TTS)
 	// - Do we need the possibility to list only male or female voices?
 	// - Should we make it easy for several sub-systems to use the TTS engine, for example an engine to use TTS
@@ -60,7 +59,7 @@ public:
 	virtual ~TextToSpeechManager() {}
 		
 	virtual bool initSpeech(Language, const String &voice = String()) {return false;}
-	virtual bool startSpeech(const String&) {return false;}
+	virtual bool startSpeech(const String&, const String& encoding = String()) {return false;}
 	virtual void stopSpeech() {}
 	virtual bool isSpeaking() const {return false;}
 

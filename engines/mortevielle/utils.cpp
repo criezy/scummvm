@@ -1881,7 +1881,7 @@ Common::String MortevielleEngine::getString(int num) {
 
 #ifdef USE_TTS
 	if (g_system->getTextToSpeechManager() != 0)
-		g_system->getTextToSpeechManager()->startSpeech(wrkStr);
+		g_system->getTextToSpeechManager()->startSpeech(wrkStr, "CP850");
 #endif
 	return wrkStr;
 }

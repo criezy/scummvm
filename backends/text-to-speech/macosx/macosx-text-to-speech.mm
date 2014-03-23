@@ -92,19 +92,17 @@ bool MacOSXTextToSpeechManager::initSpeech(Common::Language lang, const Common::
 	return true;
 }
 
-bool MacOSXTextToSpeechManager::startSpeech(const Common::String& text) {
+bool MacOSXTextToSpeechManager::startSpeech(const Common::String& text, const Common::String& encoding) {
 	if (synthesizer == 0)
 		return false;
 	
 	// Get current encoding
-	// Assume translations manager encoding for now
-#ifdef USE_TRANSLATION
-	CFStringRef encStr = CFStringCreateWithCString(NULL, TransMan.getCurrentCharset().c_str(), kCFStringEncodingASCII);
-	CFStringEncoding stringEncoding = CFStringConvertIANACharSetNameToEncoding(encStr);
-	CFRelease(encStr);
-#else
 	CFStringEncoding stringEncoding = kCFStringEncodingASCII;
-#endif
+	if (!encoding.empty()) {
+		CFStringRef encStr = CFStringCreateWithCString(NULL, encoding.c_str(), kCFStringEncodingASCII);
+		stringEncoding = CFStringConvertIANACharSetNameToEncoding(encStr);
+		CFRelease(encStr);
+	}
 
 	CFStringRef textNSString = CFStringCreateWithCString(NULL, text.c_str(), stringEncoding);
 	bool status = [synthesizer startSpeakingString:(NSString *)textNSString];

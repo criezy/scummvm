@@ -36,7 +36,7 @@ public:
 	
 	virtual bool initSpeech(Common::Language, const Common::String &voice = Common::String());
 	
-	virtual bool startSpeech(const Common::String&);
+	virtual bool startSpeech(const Common::String&, const Common::String& encoding = Common::String());
 	virtual void stopSpeech();
 	virtual bool isSpeaking() const;
 	
