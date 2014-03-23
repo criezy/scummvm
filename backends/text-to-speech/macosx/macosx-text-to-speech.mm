@@ -29,6 +29,7 @@
 #include "common/translation.h"
 #include <AppKit/NSSpeechSynthesizer.h>
 #include <Foundation/NSString.h>
+#include <Foundation/NSDictionary.h>
 #include <CoreFoundation/CFString.h>
 
 NSSpeechSynthesizer* synthesizer;
@@ -47,35 +48,47 @@ bool MacOSXTextToSpeechManager::initSpeech(Common::Language lang, const Common::
 		[synthesizer release];
 		synthesizer = 0;
 	}
-	
-	// Only English is supported
-	switch(lang) {
-	case Common::EN_ANY:
-	case Common::EN_GRB:
-	case Common::EN_USA:
-			break;
-	default:
-		return false;
+
+	// Look for a voice ID for the given language, and if given, voice name
+	Common::String langCode = Common::getLanguageCode(lang);
+	Common::String locale = Common::getLanguageLocale(lang);
+	NSString *voiceId = 0, *altVoiceId = 0;
+	// If no voice is provided, check first the default voice.
+	if (voice.empty()) {
+		NSString *defaultVoiceId = [NSSpeechSynthesizer defaultVoice];
+		NSDictionary *voiceAttr = [NSSpeechSynthesizer attributesForVoice:defaultVoiceId];
+		Common::String voiceLocale([[voiceAttr objectForKey:NSVoiceLocaleIdentifier] UTF8String]);
+		if (voiceLocale.hasPrefix(locale))
+			voiceId = defaultVoiceId;
+		else if (voiceLocale.hasPrefix(langCode))
+			altVoiceId = defaultVoiceId;
+	}
+	// Then look for other available voices
+	if (voiceId == 0) {
+		NSArray *voices =[NSSpeechSynthesizer availableVoices];
+		for (NSString *availableVoiceId in voices) {
+			NSDictionary *voiceAttr = [NSSpeechSynthesizer attributesForVoice:availableVoiceId];
+			// Check the name
+			if (!voice.empty()) {
+				Common::String voiceName([[voiceAttr objectForKey:NSVoiceName] UTF8String]);
+				if (voiceName != voice)
+					continue;
+			}
+			Common::String voiceLocale([[voiceAttr objectForKey:NSVoiceLocaleIdentifier] UTF8String]);
+			if (voiceLocale.hasPrefix(locale)) {
+				voiceId = availableVoiceId;
+				break;
+			} else if (altVoiceId == 0 && voiceLocale.hasPrefix(langCode))
+				altVoiceId = availableVoiceId;
+		}
 	}
 
-	if (synthesizer != 0)
-		[synthesizer release];
-	synthesizer = [NSSpeechSynthesizer alloc];
-	if (voice.empty())
-		[synthesizer init];
-	else {
-		// Get current encoding
-#ifdef USE_TRANSLATION
-		CFStringRef encStr = CFStringCreateWithCString(NULL, TransMan.getCurrentCharset().c_str(), kCFStringEncodingASCII);
-		CFStringEncoding stringEncoding = CFStringConvertIANACharSetNameToEncoding(encStr);
-		CFRelease(encStr);
-#else
-		CFStringEncoding stringEncoding = kCFStringEncodingASCII;
-#endif
-		CFStringRef voiceNSString = CFStringCreateWithCString(NULL, voice.c_str(), stringEncoding);
-		[synthesizer initWithVoice:(NSString *)voiceNSString];
-		CFRelease(voiceNSString);
+	if (voiceId == 0) {
+		if (altVoiceId == 0)
+			return false;
+		voiceId = altVoiceId;
 	}
+	synthesizer = [[NSSpeechSynthesizer alloc] initWithVoice:voiceId];
 	return true;
 }
 
@@ -111,30 +124,22 @@ bool MacOSXTextToSpeechManager::isSpeaking() const {
 }
 
 Common::StringArray MacOSXTextToSpeechManager::listVoices(Common::Language lang) const {
-	// Only English is supported
-	switch(lang) {
-	case Common::EN_ANY:
-	case Common::EN_GRB:
-	case Common::EN_USA:
-			break;
-	default:
-		return Common::StringArray();
-	}
+	Common::String langCode = Common::getLanguageCode(lang);
+	Common::String locale = Common::getLanguageLocale(lang);
 
-	// Get current encoding
-#ifdef USE_TRANSLATION
-	CFStringRef encStr = CFStringCreateWithCString(NULL, TransMan.getCurrentCharset().c_str(), kCFStringEncodingASCII);
-	CFStringEncoding stringEncoding = CFStringConvertIANACharSetNameToEncoding(encStr);
-	CFRelease(encStr);
-#else
-	CFStringEncoding stringEncoding = kCFStringEncodingASCII;
-#endif
-
-	Common::StringArray voiceList;
-	NSArray* voices =[NSSpeechSynthesizer availableVoices];
-	for (NSString* string in voices) {
-		voiceList.push_back(Common::String([string cStringUsingEncoding:stringEncoding]));
+	// First list those with a match on both the language and region code.
+	// Then add those with a match on the language code only.
+	Common::StringArray voiceList, altVoiceList;
+	NSArray *voices =[NSSpeechSynthesizer availableVoices];
+	for (NSString *voiceId in voices) {
+		NSDictionary *voiceAttr = [NSSpeechSynthesizer attributesForVoice:voiceId];
+		Common::String voiceLocale([[voiceAttr objectForKey:NSVoiceLocaleIdentifier] UTF8String]);
+		if (voiceLocale.hasPrefix(locale))
+			voiceList.push_back(Common::String([[voiceAttr objectForKey:NSVoiceName] UTF8String]));
+		else if (voiceLocale.hasPrefix(langCode))
+			altVoiceList.push_back(Common::String([[voiceAttr objectForKey:NSVoiceName] UTF8String]));
 	}
+	voiceList.push_back(altVoiceList);
 	return voiceList;
 }
 
