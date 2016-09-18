@@ -488,6 +488,7 @@ bool SdlEventSource::dispatchSDLEvent(SDL_Event &ev, Common::Event &event) {
 			return false;
 
 		case SDL_WINDOWEVENT_RESIZED:
+		case SDL_WINDOWEVENT_SIZE_CHANGED:
 			return handleResizeEvent(event, ev.window.data1, ev.window.data2);
 
 		default:

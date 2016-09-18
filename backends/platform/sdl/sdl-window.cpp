@@ -212,6 +212,12 @@ bool SdlWindow::createWindow(int width, int height, uint32 flags) {
 		return false;
 	}
 	setupIcon();
+	
+	// The call to SDL_DestroyWindow (from destroyWindow()) causes a SDL_WINDOWEVENT_RESIZED event
+	// to be sent with the old size when the destroyed window is in full screen. The code below will
+	// add an SDL_WINDOWEVENT_SIZE_CHANGE to the event stack so that we get the proper size. That way
+	// handleResizeEvent() in SdlEventSource gets called last with the correct size.
+	SDL_SetWindowSize(_window, width, height);
 
 	return true;
 }
