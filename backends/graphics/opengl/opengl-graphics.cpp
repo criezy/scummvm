@@ -1207,11 +1207,15 @@ frac_t OpenGLGraphicsManager::getDesiredGameScreenAspect() const {
 	const uint height = _currentState.gameHeight;
 
 	if (_currentState.aspectRatioCorrection) {
-		// In case we enable aspect ratio correction we force a 4/3 ratio.
-		// But just for 320x200 and 640x400 games, since other games do not need
-		// this.
-		if ((width == 320 && height == 200) || (width == 640 && height == 400)) {
+		// In case we enable aspect ratio correction we force a 4/3 ratio
+		// for 320x200, 480x300 and 640x400 games.
+		if ((width == 320 && height == 200) || (width == 480 && height == 300) || (width == 640 && height == 400)) {
 			return intToFrac(4) / 3;
+		}
+		// SCI Mac games can also use 320x190 resolution (because of the menu menu bar).
+		// Correct those to 320x228.
+		if (width == 320 && height == 190) {
+			return intToFrac(320) / 228;
 		}
 	}
 
