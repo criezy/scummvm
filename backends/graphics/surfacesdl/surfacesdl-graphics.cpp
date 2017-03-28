@@ -808,7 +808,8 @@ bool SurfaceSdlGraphicsManager::loadGFXMode() {
 	_videoMode.overlayWidth = _videoMode.screenWidth * _videoMode.scaleFactor;
 	_videoMode.overlayHeight = _videoMode.screenHeight * _videoMode.scaleFactor;
 
-	if (_videoMode.screenHeight != 200 && _videoMode.screenHeight != 400)
+	// Only use aspect ratio correction for 320x190, 320x200, 480x300 and 640x400 resolutions
+	if (_videoMode.screenHeight != 190 && _videoMode.screenHeight != 200 && _videoMode.screenHeight != 300 && _videoMode.screenHeight != 400)
 		_videoMode.aspectRatioCorrection = false;
 
 	if (_videoMode.aspectRatioCorrection)
