@@ -217,6 +217,10 @@ bool AGSEngine::canSaveGameStateCurrently() {
 		!_G(inside_script) && !_GP(play).fast_forward;
 }
 
+Common::String AGSEngine::getSaveStateName(int slot) const {
+	return Engine::getSaveStateName(slot) + _G(saveGameSuffix).GetCStr();
+}
+
 Common::Error AGSEngine::loadGameState(int slot) {
 	(void)AGS3::try_restore_save(slot);
 	return Common::kNoError;

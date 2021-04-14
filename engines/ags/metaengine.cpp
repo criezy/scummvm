@@ -52,6 +52,13 @@ SaveStateList AGSMetaEngine::listSaves(const char *target) const {
 
 	filenames = saveFileMan->listSavefiles(pattern);
 
+	Common::String suffix;
+	if (target != nullptr) {
+		Common::ConfigManager::Domain *gameConfig = ConfMan.getDomain(target);
+		if (gameConfig != nullptr)
+			gameConfig->tryGetVal("savegame_suffix", suffix);
+	}
+
 	int maxSlot = getMaximumSaveSlot();
 	SaveStateList saveList;
 	for (Common::StringArray::const_iterator file = filenames.begin(); file != filenames.end(); ++file) {
@@ -65,7 +72,7 @@ SaveStateList AGSMetaEngine::listSaves(const char *target) const {
 			rich_media_header.ReadFromFile(&saveFile);
 
 			if (rich_media_header.dwMagicNumber == RM_MAGICNUMBER) {
-				int slotNum = atoi(file->c_str() + file->size() - 3);
+				int slotNum = atoi(file->c_str() + file->size() - 3 - suffix.size());
 				if (slotNum > maxSlot)
 					continue;
 
@@ -96,12 +103,18 @@ bool AGSMetaEngine::hasFeature(MetaEngineFeature f) const {
 }
 
 Common::String AGSMetaEngine::getSavegameFile(int saveGameIdx, const char *target) const {
+	Common::String suffix;
+	if (target != nullptr) {
+		Common::ConfigManager::Domain *gameConfig = ConfMan.getDomain(target);
+		if (gameConfig != nullptr)
+			gameConfig->tryGetVal("savegame_suffix", suffix);
+	}
 	if (saveGameIdx == kSavegameFilePattern) {
 		// Pattern requested
-		return Common::String::format("%s.###", target == nullptr ? getEngineId() : target);
+		return Common::String::format("%s.###", target == nullptr ? getEngineId() : target) + suffix;
 	} else {
 		// Specific filename requested
-		return Common::String::format("%s.%03d", target == nullptr ? getEngineId() : target, saveGameIdx);
+		return Common::String::format("%s.%03d", target == nullptr ? getEngineId() : target, saveGameIdx) + suffix;
 	}
 }
 

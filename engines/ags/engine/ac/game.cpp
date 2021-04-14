@@ -103,6 +103,7 @@
 #include "ags/globals.h"
 #include "ags/ags.h"
 #include "common/memstream.h"
+#include "common/config-manager.h"
 
 namespace AGS3 {
 
@@ -242,6 +243,9 @@ String get_save_game_suffix() {
 
 void set_save_game_suffix(const String &suffix) {
 	_G(saveGameSuffix) = suffix;
+	// Also add it to ConfMan for the MetaEngine savefile pattern
+	ConfMan.set("savegame_suffix", suffix);
+	ConfMan.flushToDisk();
 }
 
 String get_save_game_path(int slotNum) {

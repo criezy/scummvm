@@ -136,6 +136,11 @@ public:
 	bool canSaveGameStateCurrently() override;
 
 	/**
+	 * Generate the savegame filename.
+	 */
+	Common::String getSaveStateName(int slot) const override;
+
+	/**
 	 * Load a savegame
 	 */
 	Common::Error loadGameState(int slot) override;
