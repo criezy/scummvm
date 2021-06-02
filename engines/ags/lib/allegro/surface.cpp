@@ -139,17 +139,17 @@ void BITMAP::draw(const BITMAP *srcBitmap, const Common::Rect &srcRect,
 	bool useTint = (tintRed >= 0 && tintGreen >= 0 && tintBlue >= 0);
 	bool sameFormat = (src.format == format);
 
-	byte rSrc, gSrc, bSrc, aSrc;
-	byte rDest = 0, gDest = 0, bDest = 0, aDest = 0;
-
-	PALETTE palette;
+	uint32 palette[PAL_SIZE];
 	if (src.format.bytesPerPixel == 1 && format.bytesPerPixel != 1) {
 		for (int i = 0; i < PAL_SIZE; ++i) {
-			palette[i].r = VGA_COLOR_TRANS(_G(current_palette)[i].r);
-			palette[i].g = VGA_COLOR_TRANS(_G(current_palette)[i].g);
-			palette[i].b = VGA_COLOR_TRANS(_G(current_palette)[i].b);
+			palette[i] = format.RGBToColor(VGA_COLOR_TRANS(_G(current_palette)[i].r), VGA_COLOR_TRANS(_G(current_palette)[i].g), VGA_COLOR_TRANS(_G(current_palette)[i].b));
 		}
+		sameFormat = true;
 	}
+
+	uint32 tintCol = 0;
+	if (useTint)
+		tintCol = format.RGBToColor(tintRed, tintGreen, tintBlue);
 
 	uint32 transColor = 0, alphaMask = 0xff;
 	if (skipTrans && src.format.bytesPerPixel != 1) {
@@ -188,7 +188,16 @@ void BITMAP::draw(const BITMAP *srcBitmap, const Common::Rect &srcRect,
 			if (format.bytesPerPixel == 1) {
 				*destVal = srcCol;
 				continue;
-			} else if (sameFormat && srcAlpha == -1) {
+			} else if (src.format.bytesPerPixel == 1)
+				srcCol = palette[srcCol];
+
+			if (srcAlpha == -1) {
+				// Blit pixels (no blending)
+				if (!sameFormat) {
+					byte r, g, b, a;
+					src.format.colorToARGB(srcCol, a, r, g, b);
+					srcCol = format.ARGBToColor(a, r, g, b);
+				}
 				if (format.bytesPerPixel == 4)
 					*(uint32 *)destVal = srcCol;
 				else
@@ -196,44 +205,27 @@ void BITMAP::draw(const BITMAP *srcBitmap, const Common::Rect &srcRect,
 				continue;
 			}
 
-			// We need the rgb values to do blending and/or convert between formats
-			if (src.format.bytesPerPixel == 1) {
-				const RGB& rgb = palette[srcCol];
-				aSrc = 0xff;
-				rSrc = rgb.r;
-				gSrc = rgb.g;
-				bSrc = rgb.b;
+			uint32 destCol;
+			if (useTint) {
+				if (!sameFormat) {
+					byte r, g, b, a;
+					src.format.colorToARGB(srcCol, a, r, g, b);
+					destCol = format.ARGBToColor(a, r, g, b);
+				} else
+					destCol = srcCol;
+				srcCol = tintCol;
 			} else
-				src.format.colorToARGB(srcCol, aSrc, rSrc, gSrc, bSrc);
+				destCol = getColor(destVal, format.bytesPerPixel);
 
-			if (srcAlpha == -1) {
-				// This means we don't use blending.
-				aDest = aSrc;
-				rDest = rSrc;
-				gDest = gSrc;
-				bDest = bSrc;
-			} else {
-				if (useTint) {
-					rDest = rSrc;
-					gDest = gSrc;
-					bDest = bSrc;
-					aDest = aSrc;
-					rSrc = tintRed;
-					gSrc = tintGreen;
-					bSrc = tintBlue;
-					aSrc = srcAlpha;
-				} else {
-					// TODO: move this to blendPixel to only do it when needed?
-					format.colorToARGB(getColor(destVal, format.bytesPerPixel), aDest, rDest, gDest, bDest);
-				}
-				blendPixel(aSrc, rSrc, gSrc, bSrc, aDest, rDest, gDest, bDest, srcAlpha);
-			}
-
-			uint32 pixel = format.ARGBToColor(aDest, rDest, gDest, bDest);
-			if (format.bytesPerPixel == 4)
-				*(uint32 *)destVal = pixel;
+			if (sameFormat || useTint)
+				blendPixel(srcCol, destCol, srcAlpha);
 			else
-				*(uint16 *)destVal = pixel;
+				blendPixel(srcCol, destCol, srcAlpha, src.format);
+
+			if (format.bytesPerPixel == 4)
+				*(uint32 *)destVal = destCol;
+			else
+				*(uint16 *)destVal = destCol;
 		}
 	}
 }
@@ -266,16 +258,12 @@ void BITMAP::stretchDraw(const BITMAP *srcBitmap, const Common::Rect &srcRect,
 	const int scaleY = SCALE_THRESHOLD * srcRect.height() / dstRect.height();
 	bool sameFormat = (src.format == format);
 
-	byte rSrc, gSrc, bSrc, aSrc;
-	byte rDest = 0, gDest = 0, bDest = 0, aDest = 0;
-
-	PALETTE palette;
+	uint32 palette[PAL_SIZE];
 	if (src.format.bytesPerPixel == 1 && format.bytesPerPixel != 1) {
 		for (int i = 0; i < PAL_SIZE; ++i) {
-			palette[i].r = VGA_COLOR_TRANS(_G(current_palette)[i].r);
-			palette[i].g = VGA_COLOR_TRANS(_G(current_palette)[i].g);
-			palette[i].b = VGA_COLOR_TRANS(_G(current_palette)[i].b);
+			palette[i] = format.RGBToColor(VGA_COLOR_TRANS(_G(current_palette)[i].r), VGA_COLOR_TRANS(_G(current_palette)[i].g), VGA_COLOR_TRANS(_G(current_palette)[i].b));
 		}
+		sameFormat = true;
 	}
 
 	uint32 transColor = 0, alphaMask = 0xff;
@@ -315,7 +303,16 @@ void BITMAP::stretchDraw(const BITMAP *srcBitmap, const Common::Rect &srcRect,
 			if (format.bytesPerPixel == 1) {
 				*destVal = srcCol;
 				continue;
-			} else if (sameFormat && srcAlpha == -1) {
+			} else if (src.format.bytesPerPixel == 1)
+				srcCol = palette[srcCol];
+
+			if (srcAlpha == -1) {
+				// Blit pixels (no blending)
+				if (!sameFormat) {
+					byte r, g, b, a;
+					src.format.colorToARGB(srcCol, a, r, g, b);
+					srcCol = format.ARGBToColor(a, r, g, b);
+				}
 				if (format.bytesPerPixel == 4)
 					*(uint32 *)destVal = srcCol;
 				else
@@ -323,75 +320,97 @@ void BITMAP::stretchDraw(const BITMAP *srcBitmap, const Common::Rect &srcRect,
 				continue;
 			}
 
-			// We need the rgb values to do blending and/or convert between formats
-			if (src.format.bytesPerPixel == 1) {
-				const RGB& rgb = palette[srcCol];
-				aSrc = 0xff;
-				rSrc = rgb.r;
-				gSrc = rgb.g;
-				bSrc = rgb.b;
-			} else
-				src.format.colorToARGB(srcCol, aSrc, rSrc, gSrc, bSrc);
-
-			if (srcAlpha == -1) {
-				// This means we don't use blending.
-				aDest = aSrc;
-				rDest = rSrc;
-				gDest = gSrc;
-				bDest = bSrc;
-			} else {
-				// TODO: move this to blendPixel to only do it when needed?
-				format.colorToARGB(getColor(destVal, format.bytesPerPixel), aDest, rDest, gDest, bDest);
-				blendPixel(aSrc, rSrc, gSrc, bSrc, aDest, rDest, gDest, bDest, srcAlpha);
-			}
-
-			uint32 pixel = format.ARGBToColor(aDest, rDest, gDest, bDest);
-			if (format.bytesPerPixel == 4)
-				*(uint32 *)destVal = pixel;
+			uint32 destCol = getColor(destVal, format.bytesPerPixel);
+			if (sameFormat)
+				blendPixel(srcCol, destCol, srcAlpha);
 			else
-				*(uint16 *)destVal = pixel;
+				blendPixel(srcCol, destCol, srcAlpha, src.format);
+
+			if (format.bytesPerPixel == 4)
+				*(uint32 *)destVal = destCol;
+			else
+				*(uint16 *)destVal = destCol;
 		}
 	}
 }
 
-void BITMAP::blendPixel(uint8 aSrc, uint8 rSrc, uint8 gSrc, uint8 bSrc, uint8 &aDest, uint8 &rDest, uint8 &gDest, uint8 &bDest, uint32 alpha) const {
+void BITMAP::blendPixel(uint32 srcCol, uint32 &destCol, uint32 alpha) const {
 	switch(_G(_blender_mode)) {
 	case kSourceAlphaBlender:
-		blendSourceAlpha(aSrc, rSrc, gSrc, bSrc, aDest, rDest, gDest, bDest, alpha);
+		blendSourceAlpha(srcCol, destCol, alpha);
 		break;
 	case kArgbToArgbBlender:
-		blendArgbToArgb(aSrc, rSrc, gSrc, bSrc, aDest, rDest, gDest, bDest, alpha);
+		blendArgbToArgb(srcCol, destCol, alpha);
 		break;
 	case kArgbToRgbBlender:
-		blendArgbToRgb(aSrc, rSrc, gSrc, bSrc, aDest, rDest, gDest, bDest, alpha);
+		blendArgbToRgb(srcCol, destCol, alpha);
 		break;
 	case kRgbToArgbBlender:
-		blendRgbToArgb(aSrc, rSrc, gSrc, bSrc, aDest, rDest, gDest, bDest, alpha);
+		blendRgbToArgb(srcCol, destCol, alpha);
 		break;
 	case kRgbToRgbBlender:
-		blendRgbToRgb(aSrc, rSrc, gSrc, bSrc, aDest, rDest, gDest, bDest, alpha);
+		blendRgbToRgb(srcCol, destCol, alpha);
 		break;
 	case kAlphaPreservedBlenderMode:
-		blendPreserveAlpha(aSrc, rSrc, gSrc, bSrc, aDest, rDest, gDest, bDest, alpha);
+		blendPreserveAlpha(srcCol, destCol, alpha);
 		break;
 	case kOpaqueBlenderMode:
-		blendOpaque(aSrc, rSrc, gSrc, bSrc, aDest, rDest, gDest, bDest, alpha);
+		blendOpaque(srcCol, destCol, alpha);
 		break;
 	case kAdditiveBlenderMode:
-		blendAdditiveAlpha(aSrc, rSrc, gSrc, bSrc, aDest, rDest, gDest, bDest, alpha);
+		blendAdditiveAlpha(srcCol, destCol, alpha);
 		break;
 	case kTintBlenderMode:
-		blendTintSprite(aSrc, rSrc, gSrc, bSrc, aDest, rDest, gDest, bDest, alpha, false);
+		blendTintSprite(srcCol, destCol, alpha, false);
 		break;
 	case kTintLightBlenderMode:
-		blendTintSprite(aSrc, rSrc, gSrc, bSrc, aDest, rDest, gDest, bDest, alpha, true);
+		blendTintSprite(srcCol, destCol, alpha, true);
 		break;
 	}
 }
 
-void BITMAP::blendTintSprite(uint8 aSrc, uint8 rSrc, uint8 gSrc, uint8 bSrc, uint8 &aDest, uint8 &rDest, uint8 &gDest, uint8 &bDest, uint32 alpha, bool light) const {
+void BITMAP::blendPixel(uint32 srcCol, uint32 &destCol, uint32 alpha, const Graphics::PixelFormat &srcFormat) const {
+	switch(_G(_blender_mode)) {
+	case kSourceAlphaBlender:
+		blendSourceAlpha(srcCol, destCol, alpha, srcFormat);
+		break;
+	case kArgbToArgbBlender:
+		blendArgbToArgb(srcCol, destCol, alpha, srcFormat);
+		break;
+	case kArgbToRgbBlender:
+		blendArgbToRgb(srcCol, destCol, alpha, srcFormat);
+		break;
+	case kRgbToArgbBlender:
+		blendRgbToArgb(srcCol, destCol, alpha, srcFormat);
+		break;
+	case kRgbToRgbBlender:
+		blendRgbToRgb(srcCol, destCol, alpha, srcFormat);
+		break;
+	case kAlphaPreservedBlenderMode:
+		blendPreserveAlpha(srcCol, destCol, alpha, srcFormat);
+		break;
+	case kOpaqueBlenderMode:
+		blendOpaque(srcCol, destCol, alpha, srcFormat);
+		break;
+	case kAdditiveBlenderMode:
+		blendAdditiveAlpha(srcCol, destCol, alpha, srcFormat);
+		break;
+	case kTintBlenderMode:
+		blendTintSprite(srcCol, destCol, alpha, srcFormat, false);
+		break;
+	case kTintLightBlenderMode:
+		blendTintSprite(srcCol, destCol, alpha, srcFormat, true);
+		break;
+	}
+}
+
+void BITMAP::blendTintSprite(uint32 srcCol, uint32 &destCol, uint32 alpha, const Graphics::PixelFormat &srcFormat, bool light) const {
 	// Used from draw_lit_sprite after set_blender_mode(kTintBlenderMode or kTintLightBlenderMode)
 	// Original blender function: _myblender_color32 and _myblender_color32_light
+	uint8 rSrc, gSrc, bSrc;
+	srcFormat.colorToRGB(srcCol, rSrc, gSrc, bSrc);
+	uint8 aDest, rDest, gDest, bDest;
+	format.colorToARGB(destCol, aDest, rDest, gDest, bDest);
 	float xh, xs, xv;
 	float yh, ys, yv;
 	int r, g, b;
@@ -408,6 +427,7 @@ void BITMAP::blendTintSprite(uint8 aSrc, uint8 rSrc, uint8 gSrc, uint8 bSrc, uin
 	gDest = static_cast<uint8>(g & 0xff);
 	bDest = static_cast<uint8>(b & 0xff);
 	// Preserve value in aDest
+	destCol = format.ARGBToColor(aDest, rDest, gDest, bDest);
 }
 
 /*-------------------------------------------------------------------*/
