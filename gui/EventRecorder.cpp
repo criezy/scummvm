@@ -512,6 +512,9 @@ void EventRecorder::getConfigFromDomain(const Common::ConfigManager::Domain *dom
 }
 
 void EventRecorder::getConfig() {
+	if (g_system->hasFeature(OSystem::kFeatureDoubleClickTime))
+		_recordFile->getHeader().settingsRecords["double_click_time"] = Common::String::format("%u", static_cast<unsigned int>(g_system->getDoubleClickTime()));
+
 	getConfigFromDomain(ConfMan.getDomain(ConfMan.kApplicationDomain));
 	getConfigFromDomain(ConfMan.getActiveDomain());
 	_recordFile->getHeader().settingsRecords["save_slot"] = ConfMan.get("save_slot");

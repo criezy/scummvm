@@ -372,6 +372,14 @@ Common::String OSystem_Win32::getDefaultLogFileName() {
 	return Win32::tcharToString(logFile);
 }
 
+bool OSystem_Win32::hasOSDoubleClickTime() const {
+	return true;
+}
+
+uint32 OSystem_Win32::getOSDoubleClickTime() const {
+	return GetDoubleClickTime();
+}
+
 bool OSystem_Win32::detectPortableConfigFile() {
 	// ScummVM operates in a "portable mode" if there is a config file in the
 	// same directory as the executable. In this mode, the executable's

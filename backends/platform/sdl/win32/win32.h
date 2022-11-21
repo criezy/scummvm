@@ -62,6 +62,9 @@ protected:
 
 	HWND getHwnd() { return ((SdlWindow_Win32*)_window)->getHwnd(); }
 
+	bool hasOSDoubleClickTime() const override;
+	uint32 getOSDoubleClickTime() const override;
+
 private:
 	bool _isPortable;
 	bool detectPortableConfigFile();

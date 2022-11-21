@@ -188,6 +188,10 @@ bool OSystem_SDL::hasFeature(Feature f) {
 	if (f == kFeatureOpenGLForGame) return true;
 	if (f == kFeatureShadersForGame) return _supportsShaders;
 #endif
+
+	if (f == kFeatureDoubleClickTime)
+		return ConfMan.hasKey("double_click_time") || hasOSDoubleClickTime();
+
 	return ModularGraphicsBackend::hasFeature(f);
 }
 
@@ -760,6 +764,14 @@ Common::SaveFileManager *OSystem_SDL::getSavefileManager() {
 #else
 	return _savefileManager;
 #endif
+}
+
+uint32 OSystem_SDL::getDoubleClickTime() const {
+	// If present in ConfMan use this value
+	if (ConfMan.hasKey("double_click_time"))
+		return ConfMan.getInt("double_click_time");
+	// Otherwise get from Operating System
+	return getOSDoubleClickTime();
 }
 
 //Not specified in base class
