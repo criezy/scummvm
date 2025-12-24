@@ -3213,12 +3213,6 @@ EOF
 					append_var CXXFLAGS "-gdwarf-2 -fno-var-tracking-assignments"
 				fi
 			fi
-
-			# When building with SDK 10.14 or above, we cannot compile the 32 bits dock plugin
-			# Assume the SDK version is the same as the min version.
-			if test "$_macos_min_version" -gt 101399 ; then
-				add_line_to_config_mk 'MACOSX_64_BITS_ONLY = 1'
-			fi
 		fi
 
 		case $_host_cpu in
