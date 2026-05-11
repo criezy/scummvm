@@ -40,6 +40,9 @@ public:
 
 	Common::String getSystemLanguage() const override;
 
+	void showOverlay(bool inGUI) override;
+	void hideOverlay() override;
+
 	void init() override;
 	void initBackend() override;
 	void addSysArchivesToSearchSet(Common::SearchSet &s, int priority = 0) override;

@@ -185,3 +185,16 @@ bool OSystem_MacOSX::setTextInClipboard(const Common::U32String &text) {
 	[nsstring release];
 	return status;
 }
+
+void OSystem_MacOSX::showOverlay(bool inGUI) {
+	if (inGUI) {
+		[[NSUserDefaults standardUserDefaults] setBool: YES forKey: @"AppleMomentumScrollSupported"];
+	}
+	OSystem_POSIX::showOverlay(inGUI);
+}
+
+void OSystem_MacOSX::hideOverlay() {
+	[[NSUserDefaults standardUserDefaults] setBool: NO forKey: @"AppleMomentumScrollSupported"];
+	OSystem_POSIX::hideOverlay();
+}
+
